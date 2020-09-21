@@ -1,0 +1,63 @@
+version: '3.3'
+services:
+  db:
+    image: mysql:latest
+    command:
+     - --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_PASSWORD_FILE: /run/secrets/MYSQL_PASSWORD
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/MYSQL_ROOT_PASSWORD
+      MYSQL_USER_FILE: /run/secrets/MYSQL_USER
+    ports:
+     - 3306:3306
+    volumes:
+     - /mnt/storage/kodi-mysql/data:/var/lib/mysql
+    networks:
+     - net
+    secrets:
+     - MYSQL_PASSWORD
+     - MYSQL_ROOT_PASSWORD
+     - MYSQL_USER
+    logging:
+      driver: json-file
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    environment:
+      PMA_HOST: db
+      UPLOAD_LIMIT: 500MB
+    ports:
+     - 3380:80
+    networks:
+     - net
+    logging:
+      driver: json-file
+
+  backup:
+    image: dsteinkopf/backup-all-mysql:latest
+    environment:
+      BACKUP_INTERVAL: '86400'
+      MYSQL_HOST: db
+      MYSQL_PASSWORD_FILE: /run/secrets/MYSQL_ROOT_PASSWORD
+    volumes:
+     - /mnt/backup/kodi-mysql:/var/dbdumps
+     - /etc/localtime:/etc/localtime
+     - /etc/timezone:/etc/timezone
+    networks:
+     - net
+    secrets:
+     - MYSQL_ROOT_PASSWORD
+    logging:
+      driver: json-file
+
+networks:
+  net:
+    driver: overlay
+
+secrets:
+  MYSQL_PASSWORD:
+    external: true
+  MYSQL_ROOT_PASSWORD:
+    external: true
+  MYSQL_USER:
+    external: true
