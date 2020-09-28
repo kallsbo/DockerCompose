@@ -1,0 +1,49 @@
+version: '3.3'
+services:
+  proxy:
+    image: traefik:v2.3
+    command:
+     - --api.insecure=true
+     - --providers.docker
+     - --providers.docker.swarmMode=true
+     - --providers.docker.exposedByDefault=false
+     - --entrypoints.web.address=:80
+     - --entrypoints.websecure.address=:443
+     - --certificatesresolvers.tlsresolver.acme.dnschallenge.provider=cloudflare
+     - --certificatesresolvers.tlsresolver.acme.dnschallenge.delaybeforecheck=0
+     - --certificatesresolvers.tlsresolver.acme.storage=/etc/traefik/acme/acme.json
+     - --certificatesresolvers.tlsresolver.acme.dnschallenge.resolvers=1.1.1.1:53
+    environment:
+      CF_DNS_API_TOKEN_FILE: /run/secrets/traefik_CF_DNS_API_TOKEN
+      CF_ZONE_API_TOKEN_FILE: /run/secrets/traefik_CF_ZONE_API_TOKEN
+    ports:
+     - 80:80
+     - 443:443
+     - 8080:8080
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /mnt/storage/traefik/acme:/etc/traefik/acme
+    networks:
+     - default
+    secrets:
+     - traefik_CF_DNS_API_TOKEN
+     - traefik_CF_ZONE_API_TOKEN
+    deploy:
+      labels:
+        traefik.enable: 'true'
+        traefik.http.middlewares.redirect-to-https.redirectscheme.scheme: https
+        traefik.http.routers.http-catchall.entrypoints: web
+        traefik.http.routers.http-catchall.middlewares: redirect-to-https
+        traefik.http.routers.http-catchall.rule: hostregexp(`{host:[a-z-.]+}`)
+        traefik.http.services.http-catchall.loadbalancer.server.port: '80'
+      placement:
+        constraints:
+         - node.role == manager
+networks:
+  default:
+    driver: overlay
+secrets:
+  traefik_CF_DNS_API_TOKEN:
+    external: true
+  traefik_CF_ZONE_API_TOKEN:
+    external: true
