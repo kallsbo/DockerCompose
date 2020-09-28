@@ -1,3 +1,6 @@
+#
+# More information on this setup: https://hackviking.com/2020/09/28/traefik-reverse-proxy-with-docker-swarm/
+#
 version: '3.3'
 services:
   proxy:
