@@ -12,7 +12,7 @@ services:
      # Setup ingress
      - --entrypoints.web.address=:80
      - --entrypoints.websecure.address=:443
-     # LetsEncrypt configuration
+     # LetsEncrypt configuration nad tlsresolver
      - --certificatesresolvers.tlsresolver.acme.dnschallenge.provider=cloudflare
      - --certificatesresolvers.tlsresolver.acme.dnschallenge.delaybeforecheck=0
      - --certificatesresolvers.tlsresolver.acme.storage=/etc/traefik/acme/acme.json
