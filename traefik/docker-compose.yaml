@@ -3,17 +3,22 @@ services:
   proxy:
     image: traefik:v2.3
     command:
+     # Enable the dashboard
      - --api.insecure=true
+     # Setup configuration via docker labels
      - --providers.docker
      - --providers.docker.swarmMode=true
      - --providers.docker.exposedByDefault=false
+     # Setup ingress
      - --entrypoints.web.address=:80
      - --entrypoints.websecure.address=:443
+     # LetsEncrypt configuration
      - --certificatesresolvers.tlsresolver.acme.dnschallenge.provider=cloudflare
      - --certificatesresolvers.tlsresolver.acme.dnschallenge.delaybeforecheck=0
      - --certificatesresolvers.tlsresolver.acme.storage=/etc/traefik/acme/acme.json
      - --certificatesresolvers.tlsresolver.acme.dnschallenge.resolvers=1.1.1.1:53
     environment:
+      # secrets for the CloudFlare tokens
       CF_DNS_API_TOKEN_FILE: /run/secrets/traefik_CF_DNS_API_TOKEN
       CF_ZONE_API_TOKEN_FILE: /run/secrets/traefik_CF_ZONE_API_TOKEN
     ports:
@@ -22,6 +27,7 @@ services:
      - 8080:8080
     volumes:
      - /var/run/docker.sock:/var/run/docker.sock
+     # Storage of the certificates
      - /mnt/storage/traefik/acme:/etc/traefik/acme
     networks:
      - default
@@ -30,6 +36,8 @@ services:
      - traefik_CF_ZONE_API_TOKEN
     deploy:
       labels:
+        # Configures a dummy service on the Traefik container it self to redirect all http to https.
+        # This prevents the need to configure this on each container.
         traefik.enable: 'true'
         traefik.http.middlewares.redirect-to-https.redirectscheme.scheme: https
         traefik.http.routers.http-catchall.entrypoints: web
@@ -38,6 +46,7 @@ services:
         traefik.http.services.http-catchall.loadbalancer.server.port: '80'
       placement:
         constraints:
+         # Since all config comes from the docker labels we need to be on a manager node to listen in on docker changes.
          - node.role == manager
 networks:
   default:
