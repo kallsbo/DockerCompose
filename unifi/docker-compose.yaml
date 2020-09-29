@@ -1,0 +1,37 @@
+version: '3.3'
+services:
+  unifi:
+    image: linuxserver/unifi-controller:latest
+    environment:
+      PGID: '1000'
+      PUID: '1000'
+    ports:
+     - 1900:1900/udp
+     - 3478:3478/udp
+     - 5514:5514
+     - 6789:6789
+     - 8080:8080
+     - 8443:8443
+     - 8843:8843
+     - 8880:8880
+     - 10001:10001/udp
+    volumes:
+     - /mnt/storage/unifi:/config
+     - /mnt/backup/unifi:/usr/lib/unifi/data/backup/autobackup
+    networks:
+     - traefik_default
+    deploy:
+      labels:
+        traefik.enable: 'true'
+        traefik.docker.network: traefik_default
+        traefik.http.routers.unifi.tls: 'true'
+        traefik.http.routers.unifi.rule: Host(`unifi.example.com`)
+        traefik.http.routers.unifi.tls.domains[0].main: example.com
+        traefik.http.routers.unifi.tls.domains[0].sans: '*.example.com'
+        traefik.http.routers.unifi.entrypoints: websecure
+        traefik.http.routers.unifi.tls.certresolver: tlsresolver
+        traefik.http.services.unifi.loadbalancer.server.scheme: https
+        traefik.http.services.unifi.loadbalancer.server.port: '8443'
+networks:
+  traefik_default:
+    external: true
