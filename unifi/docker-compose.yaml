@@ -1,3 +1,6 @@
+#
+# More information https://hackviking.com/2020/09/29/unifi-controller-behind-traefik/
+#
 version: '3.3'
 services:
   unifi:
